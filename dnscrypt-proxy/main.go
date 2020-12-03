@@ -29,6 +29,7 @@ type App struct {
 func main() {
 	TimezoneSetup()
 	dlog.Init("dnscrypt-proxy", dlog.SeverityNotice, "DAEMON")
+	dlog.Noticef("****Processing begins")
 
 	seed := make([]byte, 8)
 	crypto_rand.Read(seed)
