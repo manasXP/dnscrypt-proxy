@@ -80,7 +80,9 @@ type Proxy struct {
 	allWeeklyRanges                *map[string]WeeklyRanges
 	logMaxSize                     int
 	logMaxAge                      int
+	allowedIPFormat                string
 	logMaxBackups                  int
+	allowedIPLogFile               string
 	blockedQueryResponse           string
 	queryMeta                      []string
 	routes                         *map[string][]string
