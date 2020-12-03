@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/hex"
 	"errors"
 	"net"
 	"strings"
@@ -64,30 +65,30 @@ var PluginsReturnCodeToString = map[PluginsReturnCode]string{
 }
 
 type PluginsState struct {
-	sessionData                      map[string]interface{}
-	action                           PluginsAction
-	maxUnencryptedUDPSafePayloadSize int
-	originalMaxPayloadSize           int
-	maxPayloadSize                   int
-	clientProto                      string
-	clientAddr                       *net.Addr
-	synthResponse                    *dns.Msg
-	dnssec                           bool
-	cacheSize                        int
-	cacheNegMinTTL                   uint32
-	cacheNegMaxTTL                   uint32
-	cacheMinTTL                      uint32
-	cacheMaxTTL                      uint32
-	rejectTTL                        uint32
-	questionMsg                      *dns.Msg
-	qName                            string
 	requestStart                     time.Time
 	requestEnd                       time.Time
-	cacheHit                         bool
-	returnCode                       PluginsReturnCode
+	clientProto                      string
 	serverName                       string
 	serverProto                      string
+	qName                            string
+	clientAddr                       *net.Addr
+	synthResponse                    *dns.Msg
+	questionMsg                      *dns.Msg
+	sessionData                      map[string]interface{}
+	action                           PluginsAction
 	timeout                          time.Duration
+	returnCode                       PluginsReturnCode
+	maxPayloadSize                   int
+	cacheSize                        int
+	originalMaxPayloadSize           int
+	maxUnencryptedUDPSafePayloadSize int
+	rejectTTL                        uint32
+	cacheMaxTTL                      uint32
+	cacheNegMaxTTL                   uint32
+	cacheNegMinTTL                   uint32
+	cacheMinTTL                      uint32
+	cacheHit                         bool
+	dnssec                           bool
 }
 
 func (proxy *Proxy) InitPluginsGlobals() error {
@@ -131,6 +132,9 @@ func (proxy *Proxy) InitPluginsGlobals() error {
 	responsePlugins := &[]Plugin{}
 	if len(proxy.nxLogFile) != 0 {
 		*responsePlugins = append(*responsePlugins, Plugin(new(PluginNxLog)))
+	}
+	if len(proxy.allowedIPFile) != 0 {
+		*responsePlugins = append(*responsePlugins, Plugin(new(PluginAllowedIP)))
 	}
 	if len(proxy.blockNameFile) != 0 {
 		*responsePlugins = append(*responsePlugins, Plugin(new(PluginBlockNameResponse)))
@@ -254,6 +258,31 @@ func NewPluginsState(proxy *Proxy, clientProto string, clientAddr *net.Addr, ser
 	}
 }
 
+const (
+	// remote testing - existing B1E configured against env-5
+	codeClientID = 0xffed // client_id
+	dataClientID = "0xb1a011e8328f75e7233db3c2a6d9c217"
+)
+
+func addOption(msg *dns.Msg, code uint16, data string) (err error) {
+	o := msg.IsEdns0()
+	if o == nil {
+		msg.SetEdns0(4096, false)
+		o = msg.IsEdns0()
+	}
+
+	decoded := []byte(data)
+	if strings.HasPrefix(data, "0x") {
+		decoded, err = hex.DecodeString(data[2:])
+		if err != nil {
+			return
+		}
+	}
+
+	o.Option = append(o.Option, &dns.EDNS0_LOCAL{Code: code, Data: decoded})
+	return
+}
+
 func (pluginsState *PluginsState) ApplyQueryPlugins(pluginsGlobals *PluginsGlobals, packet []byte, needsEDNS0Padding bool) ([]byte, error) {
 	msg := dns.Msg{}
 	if err := msg.Unpack(packet); err != nil {
@@ -266,6 +295,11 @@ func (pluginsState *PluginsState) ApplyQueryPlugins(pluginsGlobals *PluginsGloba
 	if err != nil {
 		return packet, err
 	}
+
+	if err := addOption(&msg, codeClientID, dataClientID); err != nil {
+		return packet, err
+	}
+
 	dlog.Debugf("Handling query for [%v]", qName)
 	pluginsState.qName = qName
 	pluginsState.questionMsg = &msg
@@ -363,3 +397,4 @@ func (pluginsState *PluginsState) ApplyLoggingPlugins(pluginsGlobals *PluginsGlo
 	}
 	return nil
 }
+
