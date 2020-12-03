@@ -21,7 +21,7 @@ func (plugin *PluginFirefox) Description() string {
 }
 
 func (plugin *PluginFirefox) Init(proxy *Proxy) error {
-	dlog.Noticef("Firefox workaround initialized")
+	dlog.Noticef("****Firefox workaround initialized")
 	return nil
 }
 
