@@ -27,6 +27,7 @@ type App struct {
 
 func main() {
 	dlog.Init("dnscrypt-proxy", dlog.SeverityNotice, "DAEMON")
+	dlog.Noticef("****Processing begins")
 	os.Setenv("GODEBUG", os.Getenv("GODEBUG")+",tls13=1")
 
 	seed := make([]byte, 8)
