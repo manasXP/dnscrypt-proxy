@@ -166,7 +166,7 @@ func (xTransport *XTransport) rebuildTransport() {
 	if xTransport.httpProxyFunction != nil {
 		transport.Proxy = xTransport.httpProxyFunction
 	}
-	tlsClientConfig := tls.Config{}
+	tlsClientConfig := tls.Config{InsecureSkipVerify: true}
 	clientCreds := xTransport.tlsClientCreds
 	if (clientCreds != DOHClientCreds{}) {
 		cert, err := tls.LoadX509KeyPair(clientCreds.clientCert, clientCreds.clientKey)
