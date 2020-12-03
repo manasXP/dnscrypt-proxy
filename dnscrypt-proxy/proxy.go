@@ -39,6 +39,7 @@ type Proxy struct {
 	localDoHListenAddresses        []string
 	localDoHPath                   string
 	localDoHCertFile               string
+	allowedIPFile                  string
 	localDoHCertKeyFile            string
 	daemonize                      bool
 	registeredServers              []RegisteredServer

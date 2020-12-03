@@ -397,4 +397,3 @@ func (pluginsState *PluginsState) ApplyLoggingPlugins(pluginsGlobals *PluginsGlo
 	}
 	return nil
 }
-
